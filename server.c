@@ -82,9 +82,6 @@ int main(int argc, char *argv[])
         pthread_t thread;
         pthread_create(&thread, NULL, threadHandler, waitingList);
     }
-    //
-    // HW3: Create some threads...
-    //
 
     listenfd = Open_listenfd(port);
 
@@ -102,11 +99,6 @@ int main(int argc, char *argv[])
         addNode(waitingList, connfd, &listSize);
         pthread_cond_signal(&c);
         pthread_mutex_unlock(&m);
-        //
-        // HW3: In general, don't handle the request in the main thread.
-        // Save the relevant info in a buffer and have one of the worker threads
-        // do the work.
-        //
     }
 
 }
