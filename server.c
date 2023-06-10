@@ -1,5 +1,3 @@
-#include <pthread.h>
-#include <stdlib.h>
 #include "segel.h"
 #include "request.h"
 #include "list.h"
@@ -29,16 +27,26 @@ int numWorkingThreads = 0;
 void getargs(int *port, int *numThreads, int* queueSize, char** schedalg, int *maxSize, int argc, char *argv[])
 {
     if (argc < 5) {
-        // TODO: what to print
-        // TODO: what should be returned if schedalg isn't valid
-        fprintf(stderr, "Usage: %s <port>\n", argv[0]);
+        fprintf(stderr, "Usage: %s <port> <num_threads> <queue_size> <schedalg> <?max_size>\n", argv[0]);
         exit(1);
     }
+
+
 
     *port = atoi(argv[1]);
     *numThreads = atoi(argv[2]);
     *queueSize = atoi(argv[3]);
     *schedalg = argv[4];
+
+    if(strcmp(*schedalg, "block") != 0 &&
+       strcmp(*schedalg, "drop_head") != 0 &&
+       strcmp(*schedalg, "drop_tail") != 0 &&
+       strcmp(*schedalg, "block_flush") != 0 &&
+       strcmp(*schedalg, "Dynamic") != 0 &&
+       strcmp(*schedalg, "drop_random") != 0) {
+        fprintf(stderr, "Invalid schedalg! Aborting...\n");
+        exit(1);
+    }
 
     if(argc == 6) {
         *maxSize = atoi(argv[5]);
@@ -59,7 +67,7 @@ void* threadHandler(void* args) {
 
         printf("%llu starting job.\n", tid);
         connfd = removeFirst(list, &listSize);
-//        printf("%d\n", connfd);
+        printf("executing %d\n", connfd);
         numWorkingThreads++;
         pthread_mutex_unlock(&m);
 
@@ -69,13 +77,47 @@ void* threadHandler(void* args) {
 
         pthread_mutex_lock(&m);
         numWorkingThreads--;
+        pthread_cond_signal(&c);
         pthread_mutex_unlock(&m);
     }
 
 }
 
-void handleSchedAlg(List list, char* schedalg) {
+void addRequest(List list, int connfd) {
+    addNode(list, connfd, &listSize);
+    pthread_cond_signal(&c);
+}
+
+void handleBlock(List list, int connfd, int queueSize) {
+    // TODO: we wake up both the main thread and other threads, is it working fine?
+    while(listSize+numWorkingThreads == queueSize) {
+        pthread_cond_wait(&c, &m);
+    }
+
+    addRequest(list, connfd);
+}
+
+void handleDropHead(List list, int connfd) {
+    int removedConnFd = removeFirst(list, &listSize);
+    printf("dropping %d\n", removedConnFd);
+    Close(removedConnFd);
+    addRequest(list, connfd);
+}
+
+void handleDynamic(int* queueSize, int connfd, int maxSize) {
+    if(*queueSize < maxSize) {
+        (*queueSize)++;
+    }
+
+    printf("dropping %d. queue size is now: %d\n", connfd, *queueSize);
+    // TODO: replace close socket by calling to drop tail
+    Close(connfd);
+}
+
+void handleSchedAlg(List list, char* schedalg, int connfd, int* queueSize, int maxSize) {
+    // TODO: Should we put the lock inside for performance?
     if(strcmp(schedalg, "block") == 0) {
+        handleBlock(list, connfd, *queueSize);
         return;
     }
 
@@ -84,6 +126,7 @@ void handleSchedAlg(List list, char* schedalg) {
     }
 
     if(strcmp(schedalg, "drop_head") == 0) {
+        handleDropHead(list, connfd);
         return;
     }
 
@@ -93,6 +136,7 @@ void handleSchedAlg(List list, char* schedalg) {
 
     // TODO: make sure that Dynamic is with capital D
     if(strcmp(schedalg, "Dynamic") == 0) {
+        handleDynamic(queueSize, connfd, maxSize);
         return;
     }
 
@@ -100,8 +144,6 @@ void handleSchedAlg(List list, char* schedalg) {
         return;
     }
 }
-
-
 
 int main(int argc, char *argv[])
 {
@@ -125,17 +167,15 @@ int main(int argc, char *argv[])
         clientlen = sizeof(clientaddr);
 
         connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
-
+        printf("received %d\n", connfd);
         pthread_mutex_lock(&m);
 
-        handleSchedAlg(waitingList, schedalg);
-//        if(listSize+numWorkingThreads == queueSize) {
-//            pthread_mutex_unlock(&m);
-//            continue;
-//        }
+        if(listSize+numWorkingThreads == queueSize) {
+            handleSchedAlg(waitingList, schedalg, connfd, &queueSize, maxSize);
+        } else {
+            addRequest(waitingList, connfd);
+        }
 
-//        addNode(waitingList, connfd, &listSize);
-        pthread_cond_signal(&c);
         pthread_mutex_unlock(&m);
     }
 
