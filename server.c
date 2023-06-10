@@ -30,6 +30,7 @@ void getargs(int *port, int *numThreads, int* queueSize, char** schedalg, int *m
 {
     if (argc < 5) {
         // TODO: what to print
+        // TODO: what should be returned if schedalg isn't valid
         fprintf(stderr, "Usage: %s <port>\n", argv[0]);
         exit(1);
     }
@@ -73,6 +74,33 @@ void* threadHandler(void* args) {
 
 }
 
+void handleSchedAlg(List list, char* schedalg) {
+    if(strcmp(schedalg, "block") == 0) {
+        return;
+    }
+
+    if(strcmp(schedalg, "drop_tail") == 0) {
+        return;
+    }
+
+    if(strcmp(schedalg, "drop_head") == 0) {
+        return;
+    }
+
+    if(strcmp(schedalg, "block_flush") == 0) {
+        return;
+    }
+
+    // TODO: make sure that Dynamic is with capital D
+    if(strcmp(schedalg, "Dynamic") == 0) {
+        return;
+    }
+
+    if(strcmp(schedalg, "drop_random") == 0) {
+        return;
+    }
+}
+
 
 
 int main(int argc, char *argv[])
@@ -99,12 +127,14 @@ int main(int argc, char *argv[])
         connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
 
         pthread_mutex_lock(&m);
-        if(listSize+numWorkingThreads == queueSize) {
-            pthread_mutex_unlock(&m);
-            continue;
-        }
 
-        addNode(waitingList, connfd, &listSize);
+        handleSchedAlg(waitingList, schedalg);
+//        if(listSize+numWorkingThreads == queueSize) {
+//            pthread_mutex_unlock(&m);
+//            continue;
+//        }
+
+//        addNode(waitingList, connfd, &listSize);
         pthread_cond_signal(&c);
         pthread_mutex_unlock(&m);
     }
