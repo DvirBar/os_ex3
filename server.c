@@ -47,17 +47,23 @@ void getargs(int *port, int *numThreads, int* queueSize, char** schedalg, int *m
 void* threadHandler(void* args) {
     int connfd = 0;
     List list = (List) args;
+    uint64_t tid;
+    pthread_threadid_np(NULL, &tid);
     while(1) {
         pthread_mutex_lock(&m);
         while(listSize == 0) {
+            printf("%llu waiting...\n", tid);
             pthread_cond_wait(&c, &m);
         }
 
+        printf("%llu starting job.\n", tid);
         connfd = removeFirst(list, &listSize);
+//        printf("%d\n", connfd);
         numWorkingThreads++;
         pthread_mutex_unlock(&m);
 
         requestHandle(connfd);
+        sleep(10);
         Close(connfd);
 
         pthread_mutex_lock(&m);
@@ -85,6 +91,8 @@ int main(int argc, char *argv[])
 
     listenfd = Open_listenfd(port);
 
+    uint64_t tid;
+    pthread_threadid_np(NULL, &tid);
     while (1) {
         clientlen = sizeof(clientaddr);
 

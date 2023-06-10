@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include "list.h"
+#include "assert.h"
 
 struct List_t {
     int data;
@@ -19,13 +20,19 @@ List init() {
 }
 
 List addNode(List list, int data, int* size) {
+    assert(list != NULL);
+
     List newNode = malloc(sizeof(*newNode));
     if(newNode == NULL) {
         return NULL;
     }
 
+    List currentNode = list;
+    while(currentNode->next != NULL) {
+        currentNode = currentNode->next;
+    }
     newNode->data = data;
-    list->next = newNode;
+    currentNode->next = newNode;
     newNode->next = NULL;
     (*size)++;
 
@@ -33,13 +40,14 @@ List addNode(List list, int data, int* size) {
 }
 
 int removeFirst(List list, int* size) {
-    if(!list->next) {
+    assert(list != NULL);
+    if(!(list->next)) {
         return -1;
     }
 
     List nextNode = list->next;
+    int retData = nextNode->data;
     list->next = nextNode->next;
-    int retData = list->data;
     free(nextNode);
     (*size)--;
 
