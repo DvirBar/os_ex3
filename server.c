@@ -18,8 +18,8 @@
 //    List holdingQueue;
 //};
 
-pthread_cond_t c = PTHREAD_COND_INITIALIZER;
-pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t c;
+pthread_mutex_t m;
 int listSize = 0;
 int numWorkingThreads = 0;
 
@@ -57,15 +57,15 @@ void* threadHandler(void* args) {
     int connfd = 0;
     List list = (List) args;
     uint64_t tid;
-    pthread_threadid_np(NULL, &tid);
+//    pthread_threadid_np(NULL, &tid);
     while(1) {
         pthread_mutex_lock(&m);
         while(listSize == 0) {
-            printf("%llu waiting...\n", tid);
+//            printf("%llu waiting...\n", tid);
             pthread_cond_wait(&c, &m);
         }
 
-        printf("%llu starting job.\n", tid);
+//        printf("%llu starting job.\n", tid);
         connfd = removeFirst(list, &listSize);
         printf("executing %d\n", connfd);
         numWorkingThreads++;
@@ -97,12 +97,26 @@ void handleBlock(List list, int connfd, int queueSize) {
     addRequest(list, connfd);
 }
 
+void handleDropTail(int connfd) {
+//    printf("dropping %d\n", connfd);
+    Close(connfd);
+}
+
 void handleDropHead(List list, int connfd) {
     int removedConnFd = removeFirst(list, &listSize);
     printf("dropping %d\n", removedConnFd);
     Close(removedConnFd);
     addRequest(list, connfd);
 }
+
+void handleBlockFlush(int connfd) {
+    while((listSize == 0) && (numWorkingThreads == 0)) {
+        pthread_cond_wait(&c, &m);
+    }
+    Close(connfd);
+}
+
+
 
 void handleDynamic(int* queueSize, int connfd, int maxSize) {
     if(*queueSize < maxSize) {
@@ -114,6 +128,44 @@ void handleDynamic(int* queueSize, int connfd, int maxSize) {
     Close(connfd);
 }
 
+void randomizeIndexes(int* index_arr, int arr_size) {
+    int res = 0;
+    int* index_hist = malloc(sizeof(int) * arr_size);
+
+    for(int i = 0; i < arr_size; i++)
+    {
+        do {
+            res = rand() % arr_size;
+        }
+        while(index_hist[res] != 0);
+
+        index_arr[i] = res;
+        index_hist[res]++;
+    }
+
+    free(index_hist);
+}
+
+void handleRandom(List list, int connfd) {
+    int num_of_indexes = 0;
+    if (listSize % 2 == 0)
+        num_of_indexes = listSize / 2;
+    else
+        num_of_indexes = (listSize + 1) / 2;
+
+    int* indexes_to_remove = malloc(sizeof(int) * num_of_indexes);
+    int* removed_requests = malloc(sizeof(int) * num_of_indexes);
+    randomizeIndexes(indexes_to_remove, num_of_indexes);
+    removeIndexes(list, indexes_to_remove, num_of_indexes, &listSize, removed_requests);
+
+    for(int i = 0; i < num_of_indexes; i++) {
+        Close(removed_requests[i]);
+    }
+
+    addRequest(list, connfd);
+    free(indexes_to_remove);
+}
+
 void handleSchedAlg(List list, char* schedalg, int connfd, int* queueSize, int maxSize) {
     // TODO: Should we put the lock inside for performance?
     if(strcmp(schedalg, "block") == 0) {
@@ -122,6 +174,7 @@ void handleSchedAlg(List list, char* schedalg, int connfd, int* queueSize, int m
     }
 
     if(strcmp(schedalg, "drop_tail") == 0) {
+        handleDropTail(connfd);
         return;
     }
 
@@ -131,6 +184,7 @@ void handleSchedAlg(List list, char* schedalg, int connfd, int* queueSize, int m
     }
 
     if(strcmp(schedalg, "block_flush") == 0) {
+        handleBlockFlush(connfd);
         return;
     }
 
@@ -147,6 +201,8 @@ void handleSchedAlg(List list, char* schedalg, int connfd, int* queueSize, int m
 
 int main(int argc, char *argv[])
 {
+    pthread_cond_init(&c, NULL);
+    pthread_mutex_init(&m, NULL);
     int listenfd, connfd, port, numThreads, queueSize, maxSize, clientlen;
     char* schedalg;
     struct sockaddr_in clientaddr;
@@ -162,7 +218,7 @@ int main(int argc, char *argv[])
     listenfd = Open_listenfd(port);
 
     uint64_t tid;
-    pthread_threadid_np(NULL, &tid);
+//    pthread_threadid_np(NULL, &tid);
     while (1) {
         clientlen = sizeof(clientaddr);
 

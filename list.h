@@ -6,6 +6,9 @@ typedef struct List_t *List;
 List init();
 List addNode(List list, int data, int* size);
 int removeFirst(List list, int* size);
+void removeIndexes(List list, int* indexes_to_remove, int num_indexes, int* list_size, int* removed);
 void deleteList(List list);
+static int is_in_array(int* array, int array_size, int value);
+static int removeNode(List list, int* list_size);
 
 #endif //OS_EX3_LIST_H

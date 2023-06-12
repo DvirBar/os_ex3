@@ -45,13 +45,27 @@ int removeFirst(List list, int* size) {
         return -1;
     }
 
-    List nextNode = list->next;
-    int retData = nextNode->data;
-    list->next = nextNode->next;
-    free(nextNode);
-    (*size)--;
+//    List nextNode = list->next;
+//    int retData = nextNode->data;
+//    list->next = nextNode->next;
+//    free(nextNode);
+//    (*size)--;
 
-    return retData;
+    return removeNode(list, size);
+}
+
+void removeIndexes(List list, int* indexes_to_remove, int num_indexes, int* list_size, int* removed) {
+    List currentNode = list;
+    int index = 0;
+    while(currentNode != NULL) {
+        if(is_in_array(indexes_to_remove,num_indexes, index)) {
+            removed[index] = removeNode(currentNode, list_size);
+            index++;
+            continue;
+        }
+        currentNode = currentNode->next;
+        index++;
+    }
 }
 
 void deleteList(List list) {
@@ -62,4 +76,22 @@ void deleteList(List list) {
         currentNode = currentNode->next;
         free(temp);
     }
+}
+
+int is_in_array(int* array, int array_size, int value) {
+    for(int i = 0; i < array_size; i++) {
+        if(array[0] == value)
+            return 1;
+    }
+    return 0;
+}
+
+int removeNode(List list, int* list_size) {
+    List nextNode = list->next;
+    int retData = nextNode->data;
+    list->next = nextNode->next;
+    free(nextNode);
+    (*list_size)--;
+
+    return retData;
 }
