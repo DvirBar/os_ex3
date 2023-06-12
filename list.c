@@ -57,10 +57,12 @@ int removeFirst(List list, int* size) {
 void removeIndexes(List list, int* indexes_to_remove, int num_indexes, int* list_size, int* removed) {
     List currentNode = list;
     int index = 0;
+    int removed_index = 0;
     while(currentNode != NULL) {
         if(is_in_array(indexes_to_remove,num_indexes, index)) {
-            removed[index] = removeNode(currentNode, list_size);
+            removed[removed_index] = removeNode(currentNode, list_size);
             index++;
+            removed_index++;
             continue;
         }
         currentNode = currentNode->next;
