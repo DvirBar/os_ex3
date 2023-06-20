@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include "list.h"
 #include "assert.h"
+#include <stdio.h>
 
 struct List_t {
     int data;
@@ -45,28 +46,29 @@ int removeFirst(List list, int* size) {
         return -1;
     }
 
-//    List nextNode = list->next;
-//    int retData = nextNode->data;
-//    list->next = nextNode->next;
-//    free(nextNode);
-//    (*size)--;
-
-    return removeNode(list, size);
+    return removeNode(list, list->next, size);
 }
 
 void removeIndexes(List list, int* indexes_to_remove, int num_indexes, int* list_size, int* removed) {
-    List currentNode = list;
+    List currentNode = list->next;
     int index = 0;
     int removed_index = 0;
+    List nodeToRemove = NULL;
+//    for(int i=0; i < num_indexes; i++) {
+//        printf("index: %d\n", indexes_to_remove[i]);
+//    }
     while(currentNode != NULL) {
         if(is_in_array(indexes_to_remove,num_indexes, index)) {
-            removed[removed_index] = removeNode(currentNode, list_size);
+            nodeToRemove = currentNode;
+            currentNode = currentNode->next;
+            removed[removed_index] = removeNode(list, nodeToRemove, list_size);
+            printf("removed: %d\n", removed[removed_index]);
             index++;
             removed_index++;
-            continue;
+        } else {
+            currentNode = currentNode->next;
+            index++;
         }
-        currentNode = currentNode->next;
-        index++;
     }
 }
 
@@ -82,17 +84,23 @@ void deleteList(List list) {
 
 int is_in_array(int* array, int array_size, int value) {
     for(int i = 0; i < array_size; i++) {
-        if(array[0] == value)
+        if(array[i] == value)
             return 1;
     }
     return 0;
 }
 
-int removeNode(List list, int* list_size) {
-    List nextNode = list->next;
-    int retData = nextNode->data;
-    list->next = nextNode->next;
-    free(nextNode);
+int removeNode(List head, List nodeToRemove, int* list_size) {
+    List currentNode = head->next;
+    List lastNode = head;
+    while(currentNode != nodeToRemove) {
+        lastNode = currentNode;
+        currentNode = currentNode->next;
+    }
+
+    int retData = currentNode->data;
+    lastNode->next = currentNode->next;
+    free(currentNode);
     (*list_size)--;
 
     return retData;

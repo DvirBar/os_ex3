@@ -12,16 +12,20 @@
 // Most of the work is done within routines written in request.c
 //
 
-//typedef struct ThreadHandlerArgs_t *ThreadHandlerArgs;
-//struct ThreadHandlerArgs_t {
-//    List workersQueue;
-//    List holdingQueue;
-//};
+
+struct ThreadHandlerArgs_t {
+    List list;
+    Stats stats;
+    int threadNum;
+};
+
+typedef struct ThreadHandlerArgs_t* ThreadHandlerArgs;
 
 pthread_cond_t c;
 pthread_mutex_t m;
 int listSize = 0;
 int numWorkingThreads = 0;
+int totalThreads = 0;
 
 
 void getargs(int *port, int *numThreads, int* queueSize, char** schedalg, int *maxSize, int argc, char *argv[])
@@ -31,19 +35,17 @@ void getargs(int *port, int *numThreads, int* queueSize, char** schedalg, int *m
         exit(1);
     }
 
-
-
     *port = atoi(argv[1]);
     *numThreads = atoi(argv[2]);
     *queueSize = atoi(argv[3]);
     *schedalg = argv[4];
 
     if(strcmp(*schedalg, "block") != 0 &&
-       strcmp(*schedalg, "drop_head") != 0 &&
-       strcmp(*schedalg, "drop_tail") != 0 &&
-       strcmp(*schedalg, "block_flush") != 0 &&
-       strcmp(*schedalg, "Dynamic") != 0 &&
-       strcmp(*schedalg, "drop_random") != 0) {
+       strcmp(*schedalg, "dh") != 0 &&
+       strcmp(*schedalg, "dt") != 0 &&
+       strcmp(*schedalg, "bf") != 0 &&
+       strcmp(*schedalg, "dynamic") != 0 &&
+       strcmp(*schedalg, "random") != 0) {
         fprintf(stderr, "Invalid schedalg! Aborting...\n");
         exit(1);
     }
@@ -54,25 +56,44 @@ void getargs(int *port, int *numThreads, int* queueSize, char** schedalg, int *m
 }
 
 void* threadHandler(void* args) {
-    int connfd = 0;
-    List list = (List) args;
+    int connfd;
+    ThreadHandlerArgs hargs = (ThreadHandlerArgs) args;
+    List list = hargs->list;
+    Stats stats = hargs->stats;
     uint64_t tid;
-//    pthread_threadid_np(NULL, &tid);
+
+    ThreadStats tstats = malloc(sizeof(ThreadStats));
+    tstats->tid = totalThreads;
+
+    totalThreads++;
+
+    tstats->reqCount = 0;
+    tstats->staticReqCount = 0;
+    tstats->dynamicReqCount = 0;
+    pthread_threadid_np(NULL, &tid);
+
+//    printf("%d\n", hargs->threadNum);
+    // TODO: we might want to change that
+
     while(1) {
         pthread_mutex_lock(&m);
         while(listSize == 0) {
-//            printf("%llu waiting...\n", tid);
+            printf("%llu, number: %d, waiting...\n", tid, tstats->tid);
             pthread_cond_wait(&c, &m);
         }
 
 //        printf("%llu starting job.\n", tid);
         connfd = removeFirst(list, &listSize);
-        printf("executing %d\n", connfd);
+        printf("executing %d by %d\n", connfd, tstats->tid);
         numWorkingThreads++;
         pthread_mutex_unlock(&m);
+        // TODO: should it include this one?
+        tstats->reqCount++;
+        struct timeval pickupTime;
+        gettimeofday(&pickupTime, NULL);
 
-        requestHandle(connfd);
-        sleep(10);
+        timersub(&pickupTime, &stats->arrivalTime, &stats->dispatchInterval);
+        requestHandle(connfd, stats, tstats);
         Close(connfd);
 
         pthread_mutex_lock(&m);
@@ -98,14 +119,13 @@ void handleBlock(List list, int connfd, int queueSize) {
 }
 
 void handleDropTail(int connfd) {
-//    printf("dropping %d\n", connfd);
+    printf("dropping %d\n", connfd);
     Close(connfd);
 }
 
 void handleDropHead(List list, int connfd) {
     int removedConnFd = removeFirst(list, &listSize);
-    printf("dropping %d\n", removedConnFd);
-    Close(removedConnFd);
+    handleDropTail(removedConnFd);
     addRequest(list, connfd);
 }
 
@@ -132,10 +152,16 @@ void randomizeIndexes(int* index_arr, int arr_size) {
     int res = 0;
     int* index_hist = malloc(sizeof(int) * arr_size);
 
+    for(int i = 0; i < arr_size; i++) {
+        index_hist[i] = 0;
+    }
+
+    srand(time(NULL));
+
     for(int i = 0; i < arr_size; i++)
     {
         do {
-            res = rand() % arr_size;
+            res = rand() % listSize;
         }
         while(index_hist[res] != 0);
 
@@ -159,11 +185,13 @@ void handleRandom(List list, int connfd) {
     removeIndexes(list, indexes_to_remove, num_of_indexes, &listSize, removed_requests);
 
     for(int i = 0; i < num_of_indexes; i++) {
+        printf("closing %d\n", removed_requests[i]);
         Close(removed_requests[i]);
     }
 
     addRequest(list, connfd);
     free(indexes_to_remove);
+    free(removed_requests);
 }
 
 void handleSchedAlg(List list, char* schedalg, int connfd, int* queueSize, int maxSize) {
@@ -173,28 +201,29 @@ void handleSchedAlg(List list, char* schedalg, int connfd, int* queueSize, int m
         return;
     }
 
-    if(strcmp(schedalg, "drop_tail") == 0) {
+    if(strcmp(schedalg, "dt") == 0) {
         handleDropTail(connfd);
         return;
     }
 
-    if(strcmp(schedalg, "drop_head") == 0) {
+    if(strcmp(schedalg, "dh") == 0) {
         handleDropHead(list, connfd);
         return;
     }
 
-    if(strcmp(schedalg, "block_flush") == 0) {
+    if(strcmp(schedalg, "bf") == 0) {
         handleBlockFlush(connfd);
         return;
     }
 
     // TODO: make sure that Dynamic is with capital D
-    if(strcmp(schedalg, "Dynamic") == 0) {
+    if(strcmp(schedalg, "dynamic") == 0) {
         handleDynamic(queueSize, connfd, maxSize);
         return;
     }
 
-    if(strcmp(schedalg, "drop_random") == 0) {
+    if(strcmp(schedalg, "random") == 0) {
+        handleRandom(list, connfd);
         return;
     }
 }
@@ -209,20 +238,28 @@ int main(int argc, char *argv[])
     getargs(&port, &numThreads, &queueSize, &schedalg, &maxSize, argc, argv);
 
     List waitingList = init();
+    Stats stats = malloc(sizeof(Stats));
 
     for(int i=0; i<numThreads; i++) {
+        ThreadHandlerArgs args = malloc(sizeof(ThreadHandlerArgs));
+        args->list = waitingList;
+        args->stats = stats;
+        args->threadNum = i;
         pthread_t thread;
-        pthread_create(&thread, NULL, threadHandler, waitingList);
+        pthread_create(&thread, NULL, threadHandler, args);
     }
 
     listenfd = Open_listenfd(port);
 
     uint64_t tid;
-//    pthread_threadid_np(NULL, &tid);
+    pthread_threadid_np(NULL, &tid);
+
     while (1) {
         clientlen = sizeof(clientaddr);
 
         connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
+        // TODO: should we check for gettimeofday failure?
+        gettimeofday(&stats->arrivalTime, NULL);
         printf("received %d\n", connfd);
         pthread_mutex_lock(&m);
 
