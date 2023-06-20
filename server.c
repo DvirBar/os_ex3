@@ -251,7 +251,7 @@ int main(int argc, char *argv[])
 
     listenfd = Open_listenfd(port);
 
-    uint64_t tid;
+//    uint64_t tid;
 //    pthread_threadid_np(NULL, &tid);
 
     while (1) {
