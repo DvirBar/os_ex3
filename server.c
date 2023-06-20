@@ -46,7 +46,7 @@ void getargs(int *port, int *numThreads, int* queueSize, char** schedalg, int *m
        strcmp(*schedalg, "bf") != 0 &&
        strcmp(*schedalg, "dynamic") != 0 &&
        strcmp(*schedalg, "random") != 0) {
-        fprintf(stderr, "Invalid schedalg! Aborting...\n");
+//        fprintf(stderr, "Invalid schedalg! Aborting...\n");
         exit(1);
     }
 
@@ -60,7 +60,7 @@ void* threadHandler(void* args) {
     ThreadHandlerArgs hargs = (ThreadHandlerArgs) args;
     List list = hargs->list;
     Stats stats = hargs->stats;
-    uint64_t tid;
+//    uint64_t tid;
 
     ThreadStats tstats = malloc(sizeof(ThreadStats));
     tstats->tid = totalThreads;
@@ -70,7 +70,7 @@ void* threadHandler(void* args) {
     tstats->reqCount = 0;
     tstats->staticReqCount = 0;
     tstats->dynamicReqCount = 0;
-    pthread_threadid_np(NULL, &tid);
+//    pthread_threadid_np(NULL, &tid);
 
 //    printf("%d\n", hargs->threadNum);
     // TODO: we might want to change that
@@ -78,13 +78,13 @@ void* threadHandler(void* args) {
     while(1) {
         pthread_mutex_lock(&m);
         while(listSize == 0) {
-            printf("%llu, number: %d, waiting...\n", tid, tstats->tid);
+//            printf("%llu, number: %d, waiting...\n", tid, tstats->tid);
             pthread_cond_wait(&c, &m);
         }
 
 //        printf("%llu starting job.\n", tid);
         connfd = removeFirst(list, &listSize);
-        printf("executing %d by %d\n", connfd, tstats->tid);
+//        printf("executing %d by %d\n", connfd, tstats->tid);
         numWorkingThreads++;
         pthread_mutex_unlock(&m);
         // TODO: should it include this one?
@@ -119,7 +119,7 @@ void handleBlock(List list, int connfd, int queueSize) {
 }
 
 void handleDropTail(int connfd) {
-    printf("dropping %d\n", connfd);
+//    printf("dropping %d\n", connfd);
     Close(connfd);
 }
 
@@ -143,7 +143,7 @@ void handleDynamic(int* queueSize, int connfd, int maxSize) {
         (*queueSize)++;
     }
 
-    printf("dropping %d. queue size is now: %d\n", connfd, *queueSize);
+//    printf("dropping %d. queue size is now: %d\n", connfd, *queueSize);
     // TODO: replace close socket by calling to drop tail
     Close(connfd);
 }
@@ -185,7 +185,7 @@ void handleRandom(List list, int connfd) {
     removeIndexes(list, indexes_to_remove, num_of_indexes, &listSize, removed_requests);
 
     for(int i = 0; i < num_of_indexes; i++) {
-        printf("closing %d\n", removed_requests[i]);
+//        printf("closing %d\n", removed_requests[i]);
         Close(removed_requests[i]);
     }
 
@@ -260,7 +260,7 @@ int main(int argc, char *argv[])
         connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
         // TODO: should we check for gettimeofday failure?
         gettimeofday(&stats->arrivalTime, NULL);
-        printf("received %d\n", connfd);
+//        printf("received %d\n", connfd);
         pthread_mutex_lock(&m);
 
         if(listSize+numWorkingThreads == queueSize) {
