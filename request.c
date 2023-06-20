@@ -5,7 +5,7 @@
 #include "segel.h"
 #include "request.h"
 
-void printHeaders(char buf[MAXBUF], Stats stats, ThreadStats tstats);
+void printHeaders(char buf[MAXBUF], Stats stats, ThreadStats tstats, int isDynamic);
 
 // requestError(      fd,    filename,        "404",    "Not found", "OS-HW3 Server could not find this file");
 void requestError(int fd, char *cause, char *errnum, char *shortmsg, char *longmsg, Stats stats, ThreadStats tstats)
@@ -29,7 +29,7 @@ void requestError(int fd, char *cause, char *errnum, char *shortmsg, char *longm
     printf("%s", buf);
 
     sprintf(buf, "Content-Length: %lu\r\n", strlen(body));
-    printHeaders(buf, stats, tstats);
+    printHeaders(buf, stats, tstats, 0);
     Rio_writen(fd, buf, strlen(buf));
     printf("%s", buf);
 
@@ -112,7 +112,7 @@ void requestServeDynamic(int fd, char *filename, char *cgiargs, Stats stats, Thr
    // The CGI script has to finish writing out the header.
    sprintf(buf, "HTTP/1.0 200 OK\r\n");
    sprintf(buf, "%sServer: OS-HW3 Web Server\r\n", buf);
-   printHeaders(buf, stats, tstats);
+   printHeaders(buf, stats, tstats, 1);
 
    Rio_writen(fd, buf, strlen(buf));
 
@@ -146,23 +146,27 @@ void requestServeStatic(int fd, char *filename, int filesize, Stats stats, Threa
     sprintf(buf, "%sServer: OS-HW3 Web Server\r\n", buf);
     sprintf(buf, "%sContent-Length: %d\r\n", buf, filesize);
     sprintf(buf, "%sContent-Type: %s\r\n", buf, filetype);
-    printHeaders(buf, stats, tstats);
+    printHeaders(buf, stats, tstats, 0);
 
     Rio_writen(fd, buf, strlen(buf));
 
     //  Writes out to the client socket the memory-mapped file
     Rio_writen(fd, srcp, filesize);
     Munmap(srcp, filesize);
-
 }
 
-void printHeaders(char buf[MAXBUF], Stats stats, ThreadStats tstats) {
+void printHeaders(char buf[MAXBUF], Stats stats, ThreadStats tstats, int isDynamic) {
     sprintf(buf, "%sStat-Req-Arrival:: %lu.%06lu\r\n", buf, stats->arrivalTime.tv_sec, stats->arrivalTime.tv_usec);
     sprintf(buf, "%sStat-Req-Dispatch:: %lu.%06lu\r\n", buf, stats->dispatchInterval.tv_sec, stats->dispatchInterval.tv_usec);
     sprintf(buf, "%sStat-Thread-Id:: %d\r\n", buf, tstats->tid);
     sprintf(buf, "%sStat-Thread-Count:: %d\r\n", buf, tstats->reqCount);
     sprintf(buf, "%sStat-Thread-Static:: %d\r\n", buf, tstats->staticReqCount);
-    sprintf(buf, "%sStat-Thread-Dynamic:: %d\r\n\r\n", buf, tstats->dynamicReqCount);
+
+    if(isDynamic) {
+        sprintf(buf, "%sStat-Thread-Dynamic:: %d\r\n", buf, tstats->dynamicReqCount);
+    } else {
+        sprintf(buf, "%sStat-Thread-Dynamic:: %d\r\n\r\n", buf, tstats->dynamicReqCount);
+    }
 }
 
 
