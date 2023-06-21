@@ -64,16 +64,16 @@ void* threadHandler(void* args) {
 //    uint64_t tid;
 
     ThreadStats tstats = malloc(sizeof(ThreadStats));
-    tstats->tid = totalThreads;
+    tstats->tid = hargs->threadNum;
 
-    totalThreads++;
+//    totalThreads++;
 
     tstats->reqCount = 0;
     tstats->staticReqCount = 0;
     tstats->dynamicReqCount = 0;
 //    pthread_threadid_np(NULL, &tid);
 
-//    printf("%d\n", hargs->threadNum);
+    printf("%d\n", hargs->threadNum);
     // TODO: we might want to change that
 
     while(1) {
