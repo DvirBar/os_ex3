@@ -124,6 +124,10 @@ void handleDropTail(int connfd) {
 }
 
 void handleDropHead(List list, int connfd) {
+    if(listSize == 0) {
+        addRequest(list, connfd);
+        return;
+    }
     int removedConnFd = removeFirst(list, &listSize);
     handleDropTail(removedConnFd);
     addRequest(list, connfd);
@@ -173,6 +177,10 @@ void randomizeIndexes(int* index_arr, int arr_size) {
 }
 
 void handleRandom(List list, int connfd) {
+    if(listSize == 0) {
+        addRequest(list, connfd);
+        return;
+    }
     int num_of_indexes = 0;
     if (listSize % 2 == 0)
         num_of_indexes = listSize / 2;
