@@ -62,7 +62,7 @@ void removeIndexes(List list, int* indexes_to_remove, int num_indexes, int* list
             nodeToRemove = currentNode;
             currentNode = currentNode->next;
             removed[removed_index] = removeNode(list, nodeToRemove, list_size);
-            printf("removed: %d\n", removed[removed_index]);
+//            printf("removed: %d\n", removed[removed_index]);
             index++;
             removed_index++;
         } else {
