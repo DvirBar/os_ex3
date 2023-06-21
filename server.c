@@ -178,7 +178,8 @@ void randomizeIndexes(int* index_arr, int arr_size) {
 
 void handleRandom(List list, int connfd) {
     if(listSize == 0) {
-        addRequest(list, connfd);
+        Close(connfd);
+//        addRequest(list, connfd);
         return;
     }
     int num_of_indexes = 0;
@@ -197,7 +198,8 @@ void handleRandom(List list, int connfd) {
         Close(removed_requests[i]);
     }
 
-    addRequest(list, connfd);
+//    addRequest(list, connfd);
+    Close(connfd);
     free(indexes_to_remove);
     free(removed_requests);
 }
