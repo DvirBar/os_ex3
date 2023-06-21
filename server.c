@@ -250,13 +250,15 @@ int main(int argc, char *argv[])
     List waitingList = init();
     Stats stats = malloc(sizeof(Stats));
 
+    pthread_t* workingThreads = malloc((sizeof(pthread_t) * numThreads));
+
     for(int i=0; i<numThreads; i++) {
         ThreadHandlerArgs args = malloc(sizeof(ThreadHandlerArgs));
         args->list = waitingList;
         args->stats = stats;
         args->threadNum = i;
-        pthread_t thread;
-        pthread_create(&thread, NULL, threadHandler, args);
+//        pthread_t thread;
+        pthread_create(&workingThreads[i], NULL, threadHandler, args);
     }
 
     listenfd = Open_listenfd(port);
