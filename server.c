@@ -21,7 +21,8 @@ struct ThreadHandlerArgs_t {
 
 typedef struct ThreadHandlerArgs_t* ThreadHandlerArgs;
 
-pthread_cond_t c;
+pthread_cond_t workerThreadCond;
+pthread_cond_t mainThreadCond;
 pthread_mutex_t m;
 int listSize = 0;
 int numWorkingThreads = 0;
@@ -79,7 +80,7 @@ void* threadHandler(void* args) {
         pthread_mutex_lock(&m);
         while(listSize == 0) {
 //            printf("%llu, number: %d, waiting...\n", tid, tstats->tid);
-            pthread_cond_wait(&c, &m);
+            pthread_cond_wait(&workerThreadCond, &m);
         }
 
 //        printf("%llu starting job.\n", tid);
@@ -98,7 +99,7 @@ void* threadHandler(void* args) {
 
         pthread_mutex_lock(&m);
         numWorkingThreads--;
-        pthread_cond_signal(&c);
+        pthread_cond_signal(&mainThreadCond);
         pthread_mutex_unlock(&m);
     }
 
@@ -106,13 +107,13 @@ void* threadHandler(void* args) {
 
 void addRequest(List list, int connfd) {
     addNode(list, connfd, &listSize);
-    pthread_cond_signal(&c);
+    pthread_cond_signal(&workerThreadCond);
 }
 
 void handleBlock(List list, int connfd, int queueSize) {
     // TODO: we wake up both the main thread and other threads, is it working fine?
     while(listSize+numWorkingThreads == queueSize) {
-        pthread_cond_wait(&c, &m);
+        pthread_cond_wait(&mainThreadCond, &m);
     }
 
     addRequest(list, connfd);
@@ -135,7 +136,7 @@ void handleDropHead(List list, int connfd) {
 
 void handleBlockFlush(int connfd) {
     while((listSize == 0) && (numWorkingThreads == 0)) {
-        pthread_cond_wait(&c, &m);
+        pthread_cond_wait(&mainThreadCond, &m);
     }
     Close(connfd);
 }
@@ -238,7 +239,8 @@ void handleSchedAlg(List list, char* schedalg, int connfd, int* queueSize, int m
 
 int main(int argc, char *argv[])
 {
-    pthread_cond_init(&c, NULL);
+    pthread_cond_init(&workerThreadCond, NULL);
+    pthread_cond_init(&mainThreadCond, NULL);
     pthread_mutex_init(&m, NULL);
     int listenfd, connfd, port, numThreads, queueSize, maxSize, clientlen;
     char* schedalg;
