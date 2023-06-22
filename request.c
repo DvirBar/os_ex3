@@ -160,8 +160,8 @@ void printHeaders(char buf[MAXBUF], Stats stats, ThreadStats tstats, int isDynam
     printf("%lu.%06lu\n", stats->arrivalTime.tv_sec, stats->arrivalTime.tv_usec);
     printf("Stat-Req-Arrival:: %lu.%06lu\n", stats->dispatchInterval.tv_sec, stats->dispatchInterval.tv_usec);
 
-    sprintf(buf, "%sStat-Req-Arrival:: %lu.%06d\r\n", buf, stats->arrivalTime.tv_sec, stats->arrivalTime.tv_usec);
-    sprintf(buf, "%sStat-Req-Dispatch:: %lu.%06d\r\n", buf, stats->dispatchInterval.tv_sec, stats->dispatchInterval.tv_usec);
+    sprintf(buf, "%sStat-Req-Arrival:: %lu.%06lu\r\n", buf, stats->arrivalTime.tv_sec, stats->arrivalTime.tv_usec);
+    sprintf(buf, "%sStat-Req-Dispatch:: %lu.%06lu\r\n", buf, stats->dispatchInterval.tv_sec, stats->dispatchInterval.tv_usec);
     sprintf(buf, "%sStat-Thread-Id:: %d\r\n", buf, tstats->tid);
     sprintf(buf, "%sStat-Thread-Count:: %d\r\n", buf, tstats->reqCount);
     sprintf(buf, "%sStat-Thread-Static:: %d\r\n", buf, tstats->staticReqCount);
