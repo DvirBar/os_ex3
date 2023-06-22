@@ -84,6 +84,7 @@ def validate_response_full_with_dispatch(response: requests.models.Response, exp
     assert re.fullmatch(expected, response.text),\
         f"\nExpected:\n{expected}"\
         f"\nGot:\n{response.text}"
+
     assert abs(float(response.headers['Stat-Req-Dispatch'][2:]) - dispatch) < 0.1,\
         f"\nExpected:\n{dispatch}"\
         f"\nGot:\n{float(response.headers['Stat-Req-Dispatch'][2:])}"
