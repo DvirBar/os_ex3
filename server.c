@@ -73,8 +73,7 @@ void* threadHandler(void* args) {
     tstats->dynamicReqCount = 0;
 //    pthread_threadid_np(NULL, &tid);
 
-    printf("%d\n", hargs->threadNum);
-    // TODO: we might want to change that
+//    printf("%d\n", hargs->threadNum);
 
     while(1) {
         pthread_mutex_lock(&m);
