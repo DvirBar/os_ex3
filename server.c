@@ -92,7 +92,7 @@ void* threadHandler(void* args) {
         gettimeofday(&pickupTime, NULL);
 
         printf("Stat-Req-Arrival:: %ld.%06ld\r\n", stats->arrivalTime.tv_sec, stats->arrivalTime.tv_usec);
-        printf("Stat-Req-pick:: %ld.%06ld\r\n", stats->arrivalTime.tv_sec, stats->arrivalTime.tv_usec);
+        printf("Stat-Req-pick:: %ld.%06ld\r\n", pickupTime.tv_sec, pickupTime.tv_usec);
 
         timersub(&pickupTime, &stats->arrivalTime, &stats->dispatchInterval);
         requestHandle(connfd, stats, tstats);
