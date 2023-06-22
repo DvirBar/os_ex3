@@ -91,6 +91,9 @@ void* threadHandler(void* args) {
         struct timeval pickupTime;
         gettimeofday(&pickupTime, NULL);
 
+        printf("Stat-Req-Arrival:: %ld.%06ld\r\n", stats->arrivalTime.tv_sec, stats->arrivalTime.tv_usec);
+        printf("Stat-Req-pick:: %ld.%06ld\r\n", stats->arrivalTime.tv_sec, stats->arrivalTime.tv_usec);
+
         timersub(&pickupTime, &stats->arrivalTime, &stats->dispatchInterval);
         requestHandle(connfd, stats, tstats);
 //        printf("connfd: %d\n", connfd);
@@ -271,6 +274,7 @@ int main(int argc, char *argv[])
         connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
         // TODO: should we check for gettimeofday failure?
         gettimeofday(&stats->arrivalTime, NULL);
+        printf("Stat-Req-Arrival first:: %ld.%06ld\r\n", stats->arrivalTime.tv_sec, stats->arrivalTime.tv_usec);
 //        printf("received %d\n", connfd);
         pthread_mutex_lock(&m);
 
