@@ -277,7 +277,7 @@ int main(int argc, char *argv[])
         pthread_mutex_lock(&m);
 
         if(listSize+numWorkingThreads == queueSize) {
-            if(strcmp(schedalg, "dh") == 0 && numThreads) {
+            if(strcmp(schedalg, "dh") == 0 && numThreads == queueSize) {
                 Close(connfd);
                 continue;
             }
