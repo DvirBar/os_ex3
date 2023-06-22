@@ -111,7 +111,6 @@ void addRequest(List list, int connfd) {
 }
 
 void handleBlock(List list, int connfd, int queueSize) {
-    // TODO: we wake up both the main thread and other threads, is it working fine?
     while(listSize+numWorkingThreads == queueSize) {
         pthread_cond_wait(&mainThreadCond, &m);
     }
@@ -277,10 +276,6 @@ int main(int argc, char *argv[])
         pthread_mutex_lock(&m);
 
         if(listSize+numWorkingThreads == queueSize) {
-            if(strcmp(schedalg, "dh") == 0 && numThreads == queueSize) {
-                Close(connfd);
-                continue;
-            }
             handleSchedAlg(waitingList, schedalg, connfd, &queueSize, maxSize);
         } else {
             addRequest(waitingList, connfd);
