@@ -134,8 +134,12 @@ void Close(int fd)
 {
     int rc;
 
-    if ((rc = close(fd)) < 0)
+//    printf("closing connection %d\n", fd);
+    if ((rc = close(fd)) < 0) {
         unix_error("Close error");
+    }
+
+
 }
 
 int Select(int  n, fd_set *readfds, fd_set *writefds,

@@ -94,6 +94,7 @@ void* threadHandler(void* args) {
 
         timersub(&pickupTime, &stats->arrivalTime, &stats->dispatchInterval);
         requestHandle(connfd, stats, tstats);
+//        printf("connfd: %d\n", connfd);
         Close(connfd);
 
         pthread_mutex_lock(&m);
@@ -128,6 +129,7 @@ void handleDropHead(List list, int connfd) {
         addRequest(list, connfd);
         return;
     }
+
     int removedConnFd = removeFirst(list, &listSize);
     handleDropTail(removedConnFd);
     addRequest(list, connfd);
@@ -275,6 +277,10 @@ int main(int argc, char *argv[])
         pthread_mutex_lock(&m);
 
         if(listSize+numWorkingThreads == queueSize) {
+            if(strcmp(schedalg, "dh") == 0 && numThreads) {
+                Close(connfd);
+                continue;
+            }
             handleSchedAlg(waitingList, schedalg, connfd, &queueSize, maxSize);
         } else {
             addRequest(waitingList, connfd);
