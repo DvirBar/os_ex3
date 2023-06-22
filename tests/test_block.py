@@ -50,7 +50,6 @@ def test_load(threads, queue, amount, dispatches, server_port):
             clients[i][0].close()
             expected = DYNAMIC_OUTPUT_CONTENT.format(seconds=f"1.{i:0<1}")
             expected_headers = generate_dynamic_headers(123, (i // threads) + 1, 0, (i // threads) + 1)
-            print(float(response.headers['Stat-Req-Dispatch']))
             validate_response_full_with_dispatch(response, expected_headers, expected, dispatches[i])
         server.send_signal(SIGINT)
         out, err = server.communicate()

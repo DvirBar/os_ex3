@@ -87,7 +87,6 @@ void* threadHandler(void* args) {
 //        printf("executing %d by %d\n", connfd, tstats->tid);
         numWorkingThreads++;
         pthread_mutex_unlock(&m);
-        // TODO: should it include this one?
         tstats->reqCount++;
         struct timeval pickupTime;
         gettimeofday(&pickupTime, NULL);
