@@ -15,7 +15,6 @@
 
 struct ThreadHandlerArgs_t {
     List list;
-    Stats stats;
     int threadNum;
 };
 
@@ -60,10 +59,10 @@ void* threadHandler(void* args) {
     int connfd;
     ThreadHandlerArgs hargs = (ThreadHandlerArgs) args;
     List list = hargs->list;
-    Stats stats = hargs->stats;
-//    uint64_t tid;
 
+    Stats stats = malloc(sizeof(Stats));
     ThreadStats tstats = malloc(sizeof(ThreadStats));
+
     tstats->tid = hargs->threadNum;
 
 //    totalThreads++;
@@ -82,20 +81,24 @@ void* threadHandler(void* args) {
             pthread_cond_wait(&workerThreadCond, &m);
         }
 
-//        printf("%llu starting job.\n", tid);
-        connfd = removeFirst(list, &listSize);
-//        printf("executing %d by %d\n", connfd, tstats->tid);
+        ListItem item = removeFirst(list, &listSize);
         numWorkingThreads++;
         pthread_mutex_unlock(&m);
-        tstats->reqCount++;
+
         struct timeval pickupTime;
         gettimeofday(&pickupTime, NULL);
 
-        printf("Stat-Req-Arrival:: %ld.%06ld\r\n", stats->arrivalTime.tv_sec, stats->arrivalTime.tv_usec);
-        printf("Stat-Req-pick:: %ld.%06ld\r\n", pickupTime.tv_sec, pickupTime.tv_usec);
+        stats->arrivalTime = item->arrivalTime;
+        connfd = item->connFd;
+
+        printf("arr %lu.%06lu\n", stats->arrivalTime.tv_sec, stats->arrivalTime.tv_usec);
+        printf("pic %lu.%06lu\n", pickupTime.tv_sec, pickupTime.tv_usec);
+
 
         timersub(&pickupTime, &stats->arrivalTime, &stats->dispatchInterval);
-        requestHandle(connfd, stats, tstats);
+        printf("dis %lu.%06lu\n", stats->dispatchInterval.tv_sec, stats->dispatchInterval.tv_usec);
+        tstats->reqCount++;
+        requestHandle(item->connFd, stats, tstats);
 //        printf("connfd: %d\n", connfd);
         Close(connfd);
 
@@ -107,17 +110,17 @@ void* threadHandler(void* args) {
 
 }
 
-void addRequest(List list, int connfd) {
-    addNode(list, connfd, &listSize);
+void addRequest(List list, struct timeval arrivalTime, int connfd) {
+    addNode(list, connfd, arrivalTime, &listSize);
     pthread_cond_signal(&workerThreadCond);
 }
 
-void handleBlock(List list, int connfd, int queueSize) {
+void handleBlock(List list, struct timeval arrivalTime, int connfd, int queueSize) {
     while(listSize+numWorkingThreads == queueSize) {
         pthread_cond_wait(&mainThreadCond, &m);
     }
 
-    addRequest(list, connfd);
+    addRequest(list, arrivalTime ,connfd);
 }
 
 void handleDropTail(int connfd) {
@@ -125,15 +128,16 @@ void handleDropTail(int connfd) {
     Close(connfd);
 }
 
-void handleDropHead(List list, int connfd) {
+void handleDropHead(List list, struct timeval arrivalTime, int connfd) {
     if(listSize == 0) {
-        addRequest(list, connfd);
+        addRequest(list, arrivalTime, connfd);
         return;
     }
 
-    int removedConnFd = removeFirst(list, &listSize);
-    handleDropTail(removedConnFd);
-    addRequest(list, connfd);
+    ListItem removedItem = removeFirst(list, &listSize);
+
+    handleDropTail(removedItem->connFd);
+    addRequest(list, arrivalTime, connfd);
 }
 
 void handleBlockFlush(int connfd) {
@@ -179,9 +183,9 @@ void randomizeIndexes(int* index_arr, int arr_size) {
     free(index_hist);
 }
 
-void handleRandom(List list, int connfd) {
+void handleRandom(List list, struct timeval arrivalTime, int connfd) {
     if(listSize == 0) {
-        addRequest(list, connfd);
+        addRequest(list, arrivalTime, connfd);
         return;
     }
     int num_of_indexes = 0;
@@ -200,15 +204,15 @@ void handleRandom(List list, int connfd) {
         Close(removed_requests[i]);
     }
 
-    addRequest(list, connfd);
+    addRequest(list, arrivalTime, connfd);
     free(indexes_to_remove);
     free(removed_requests);
 }
 
-void handleSchedAlg(List list, char* schedalg, int connfd, int* queueSize, int maxSize) {
+void handleSchedAlg(List list, char* schedalg, int connfd, int* queueSize, int maxSize, struct timeval arrivalTime) {
     // TODO: Should we put the lock inside for performance?
     if(strcmp(schedalg, "block") == 0) {
-        handleBlock(list, connfd, *queueSize);
+        handleBlock(list, arrivalTime, connfd, *queueSize);
         return;
     }
 
@@ -218,7 +222,7 @@ void handleSchedAlg(List list, char* schedalg, int connfd, int* queueSize, int m
     }
 
     if(strcmp(schedalg, "dh") == 0) {
-        handleDropHead(list, connfd);
+        handleDropHead(list, arrivalTime, connfd);
         return;
     }
 
@@ -234,7 +238,7 @@ void handleSchedAlg(List list, char* schedalg, int connfd, int* queueSize, int m
     }
 
     if(strcmp(schedalg, "random") == 0) {
-        handleRandom(list, connfd);
+        handleRandom(list, arrivalTime, connfd);
         return;
     }
 }
@@ -250,14 +254,12 @@ int main(int argc, char *argv[])
     getargs(&port, &numThreads, &queueSize, &schedalg, &maxSize, argc, argv);
 
     List waitingList = init();
-    Stats stats = malloc(sizeof(Stats));
 
     pthread_t* workingThreads = malloc((sizeof(pthread_t) * numThreads));
 
     for(int i=0; i<numThreads; i++) {
-        ThreadHandlerArgs args = malloc(sizeof(ThreadHandlerArgs));
+        ThreadHandlerArgs args = malloc(sizeof(struct ThreadHandlerArgs_t));
         args->list = waitingList;
-        args->stats = stats;
         args->threadNum = i;
 //        pthread_t thread;
         pthread_create(&workingThreads[i], NULL, threadHandler, args);
@@ -270,18 +272,17 @@ int main(int argc, char *argv[])
 
     while (1) {
         clientlen = sizeof(clientaddr);
-
+        struct timeval arrivalTime;
         connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
         // TODO: should we check for gettimeofday failure?
-        gettimeofday(&stats->arrivalTime, NULL);
-        printf("Stat-Req-Arrival first:: %ld.%06ld\r\n", stats->arrivalTime.tv_sec, stats->arrivalTime.tv_usec);
+        gettimeofday(&arrivalTime, NULL);
 //        printf("received %d\n", connfd);
         pthread_mutex_lock(&m);
 
         if(listSize+numWorkingThreads == queueSize) {
-            handleSchedAlg(waitingList, schedalg, connfd, &queueSize, maxSize);
+            handleSchedAlg(waitingList, schedalg, connfd, &queueSize, maxSize, arrivalTime);
         } else {
-            addRequest(waitingList, connfd);
+            addRequest(waitingList, arrivalTime, connfd);
         }
 
         pthread_mutex_unlock(&m);

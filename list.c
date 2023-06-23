@@ -3,27 +3,27 @@
 #include "assert.h"
 #include <stdio.h>
 
-struct List_t {
-    int data;
-    struct List_t* next;
-};
+
 
 List init() {
-    List list = malloc(sizeof(*list));
+    List list = malloc(sizeof(struct List_t));
     if(list == NULL) {
         return NULL;
     }
 
-    list->data = -1;
+    ListItem newItem = malloc(sizeof (struct ListItem_t));
+    newItem->connFd = -1;
+
+    list->data = newItem;
     list->next = NULL;
 
     return list;
 }
 
-List addNode(List list, int data, int* size) {
+List addNode(List list, int connFd, struct timeval arrivalTime, int* size) {
     assert(list != NULL);
 
-    List newNode = malloc(sizeof(*newNode));
+    List newNode = malloc(sizeof(struct List_t));
     if(newNode == NULL) {
         return NULL;
     }
@@ -32,18 +32,24 @@ List addNode(List list, int data, int* size) {
     while(currentNode->next != NULL) {
         currentNode = currentNode->next;
     }
-    newNode->data = data;
-    currentNode->next = newNode;
+
+    ListItem newItem = malloc(sizeof(struct ListItem_t));
+    newItem->connFd = connFd;
+    newItem->arrivalTime = arrivalTime;
+
+    newNode->data = newItem;
     newNode->next = NULL;
+
+    currentNode->next = newNode;
     (*size)++;
 
     return newNode;
 }
 
-int removeFirst(List list, int* size) {
+ListItem removeFirst(List list, int* size) {
     assert(list != NULL);
     if(!(list->next)) {
-        return -1;
+        return list->data;
     }
 
     return removeNode(list, list->next, size);
@@ -61,7 +67,7 @@ void removeIndexes(List list, int* indexes_to_remove, int num_indexes, int* list
         if(is_in_array(indexes_to_remove,num_indexes, index)) {
             nodeToRemove = currentNode;
             currentNode = currentNode->next;
-            removed[removed_index] = removeNode(list, nodeToRemove, list_size);
+            removed[removed_index] = removeNode(list, nodeToRemove, list_size)->connFd;
 //            printf("removed: %d\n", removed[removed_index]);
             index++;
             removed_index++;
@@ -90,7 +96,7 @@ int is_in_array(int* array, int array_size, int value) {
     return 0;
 }
 
-int removeNode(List head, List nodeToRemove, int* list_size) {
+ListItem removeNode(List head, List nodeToRemove, int* list_size) {
     List currentNode = head->next;
     List lastNode = head;
     while(currentNode != nodeToRemove) {
@@ -98,7 +104,7 @@ int removeNode(List head, List nodeToRemove, int* list_size) {
         currentNode = currentNode->next;
     }
 
-    int retData = currentNode->data;
+    ListItem retData = currentNode->data;
     lastNode->next = currentNode->next;
     free(currentNode);
     (*list_size)--;
