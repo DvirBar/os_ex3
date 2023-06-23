@@ -82,7 +82,6 @@ SINGLE_FILES = {'/home.html': [True, STATIC_OUTPUT_CONTENT, generate_static_head
                 '/favicon.ico': [False, None, generate_static_headers(r"\d+", r"\d+", r"\d+", r"\d+", "text/plain")]
                 }
 
-"""
 @pytest.mark.parametrize("policy, threads, num_clients, queue_size, times, files",
                          [
                              ("block", 1,  25, 30, 20, SINGLE_FILES),
@@ -110,7 +109,7 @@ def test_single(policy, threads, num_clients, queue_size, times, files, server_p
                         validate_response_full(response, expected_headers, expected)
                     else:
                         validate_response_binary(response, expected_headers, expected)
-"""
+
 
 LIGHT_FILES = {'/home.html': [True, STATIC_OUTPUT_CONTENT, generate_static_headers(r"\d+", r"\d+", r"\d+", r"\d+", "text/html")],
                '/output.cgi?0.1': [True, DYNAMIC_OUTPUT_CONTENT.format(count=r"\d+", static=r"\d+", dynamic=r"\d+", seconds="0.1"),  generate_dynamic_headers(r"\d+", r"\d+", r"\d+", r"\d+")],
@@ -176,16 +175,16 @@ LOCKS4_FILES = {'/output.cgi?0.01': [True, DYNAMIC_OUTPUT_CONTENT.format(seconds
 
 @pytest.mark.parametrize("policy, threads, num_clients, queue_size, times, files",
                          [
-                             # ("block", 8, 20, 16, 20, LOCKS_FILES),
-                             # ("block", 32, 40, 64, 10, LOCKS2_FILES),
-                             # ("block", 64, 50, 128, 6, LOCKS3_FILES),
-                             # ("block", 25, 20, 27, 20, LOCKS4_FILES),
-                             # ("dt", 32, 40, 64, 10, LOCKS2_FILES),
-                             # ("dt", 64, 50, 128, 6, LOCKS3_FILES),
-                             # ("dt", 25, 20, 27, 20, LOCKS4_FILES),
-                             # ("dh", 32, 40, 64, 10, LOCKS2_FILES),
-                             # ("dh", 64, 50, 128, 6, LOCKS3_FILES),
-                             # ("dh", 25, 20, 27, 20, LOCKS4_FILES),
+                             ("block", 8, 20, 16, 20, LOCKS_FILES),
+                             ("block", 32, 40, 64, 10, LOCKS2_FILES),
+                             ("block", 64, 50, 128, 6, LOCKS3_FILES),
+                             ("block", 25, 20, 27, 20, LOCKS4_FILES),
+                             ("dt", 32, 40, 64, 10, LOCKS2_FILES),
+                             ("dt", 64, 50, 128, 6, LOCKS3_FILES),
+                             ("dt", 25, 20, 27, 20, LOCKS4_FILES),
+                             ("dh", 32, 40, 64, 10, LOCKS2_FILES),
+                             ("dh", 64, 50, 128, 6, LOCKS3_FILES),
+                             ("dh", 25, 20, 27, 20, LOCKS4_FILES),
                              ("random", 32, 40, 64, 10, LOCKS2_FILES),
                              ("random", 64, 50, 128, 6, LOCKS3_FILES),
                              ("random", 25, 20, 27, 20, LOCKS4_FILES),
