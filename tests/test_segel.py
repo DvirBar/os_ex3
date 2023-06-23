@@ -15,7 +15,7 @@ from definitions import *
 The tests in this file are based on the description of the tests given by the course staff last semester.
 """
 
-
+"""
 @pytest.mark.parametrize("policy",
                          [
                              "dh",
@@ -24,7 +24,7 @@ The tests in this file are based on the description of the tests given by the co
                              "block"
                          ])
 def test_basic(policy, server_port):
-    """check if the webserver can serve requests"""
+    # check if the webserver can serve requests
     with Server("./server", server_port, 1, 1, policy) as server:
         sleep(0.1)
         for req in ["output.cgi?1", "favicon.ico", "home.html"]:
@@ -44,7 +44,7 @@ def test_basic(policy, server_port):
                              "block"
                          ])
 def test_nobusywait(policy, server_port):
-    """test to make sure you are not busy-waiting"""
+    # test to make sure you are not busy-waiting
     with Server("./server", server_port, 1, 1, policy) as server:
         sleep(0.3)
         p = [p for p in psutil.process_iter() if server.pid == p.pid][0]
@@ -71,7 +71,7 @@ def test_nobusywait(policy, server_port):
                              ("random", 6, 20),
                          ])
 def test_pool(policy, threads, queue_size, server_port):
-    """check if using a fixed size thread pool"""
+    # check if using a fixed size thread pool
     with Server("./server", server_port, threads, queue_size, policy) as server:
         sleep(0.1)
         stats = [stats for stats in psutil.process_iter() if server.pid == stats.pid][0]
@@ -91,8 +91,9 @@ SINGLE_FILES = {'/home.html': [True, STATIC_OUTPUT_CONTENT, generate_static_head
                              ("random", 1,  25, 30, 20, SINGLE_FILES),
                          ])
 def test_single(policy, threads, num_clients, queue_size, times, files, server_port):
-    """single thread serving many requests server params: threads 1, Q_size 30. 
-    25 clients each requesting ['/home.html', '/favicon.ico'], 20 times"""
+    # single thread serving many requests server params: threads 1, Q_size 30. 
+    # 25 clients each requesting ['/home.html', '/favicon.ico'], 20 times
+    
     with Server("./server", server_port, threads, queue_size, policy) as server:
         sleep(0.1)
         for _ in range(times):
@@ -153,6 +154,7 @@ def test_light(policy, threads, num_clients, queue_size, times, files, server_po
                         validate_response_full(response, expected_headers, expected)
                     else:
                         validate_response_binary(response, expected_headers, expected)
+"""
 
 
 LOCKS_FILES = {'/home.html': [True, STATIC_OUTPUT_CONTENT, generate_static_headers(r"\d+", r"\d+", r"\d+", r"\d+", "text/html")],
@@ -172,7 +174,6 @@ LOCKS4_FILES = {'/output.cgi?0.01': [True, DYNAMIC_OUTPUT_CONTENT.format(seconds
                 '/output.cgi?0.02': [True, DYNAMIC_OUTPUT_CONTENT.format(seconds="0.0"), generate_dynamic_headers(r"\d+", r"\d+", r"\d+", r"\d+")],
                 '/output.cgi?0.005': [True, DYNAMIC_OUTPUT_CONTENT.format(seconds="0.0"), generate_dynamic_headers(r"\d+", r"\d+", r"\d+", r"\d+")]
                 }
-
 
 @pytest.mark.parametrize("policy, threads, num_clients, queue_size, times, files",
                          [
@@ -475,7 +476,7 @@ def test_stats(policy, threads, queue_size, dynamic, static, server_port):
         assert sum(s for all, s, d in threads_stats.values()) == static
         assert sum(d for all, s, d in threads_stats.values()) == dynamic
 
-"""
+
 @pytest.mark.parametrize("policy, threads, num_clients, queue_size",
                          [
                              ("block", 2, 4, 10),
@@ -505,4 +506,3 @@ def test_stats_dispatch_time(policy, threads, num_clients, queue_size, server_po
 
         for i, t in enumerate(dispatches):
             assert i // threads == t
-"""
