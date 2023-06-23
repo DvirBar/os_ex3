@@ -91,12 +91,8 @@ void* threadHandler(void* args) {
         stats->arrivalTime = item->arrivalTime;
         connfd = item->connFd;
 
-        printf("arr %lu.%06lu\n", stats->arrivalTime.tv_sec, stats->arrivalTime.tv_usec);
-        printf("pic %lu.%06lu\n", pickupTime.tv_sec, pickupTime.tv_usec);
-
-
         timersub(&pickupTime, &stats->arrivalTime, &stats->dispatchInterval);
-        printf("dis %lu.%06lu\n", stats->dispatchInterval.tv_sec, stats->dispatchInterval.tv_usec);
+
         tstats->reqCount++;
         requestHandle(item->connFd, stats, tstats);
 //        printf("connfd: %d\n", connfd);
