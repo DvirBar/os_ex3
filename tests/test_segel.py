@@ -286,7 +286,7 @@ def test_fewer(policy, threads, num_clients, queue_size, times, files, server_po
                     else:
                         validate_response_binary(response, expected_headers, expected)
                 assert dropped == (num_clients - queue_size if policy != "block" and ".cgi" in file_name else 0)
-"""
+
 @pytest.mark.parametrize("threads, num_clients, queue_size, times",
                          [
                              (2, 14, 8, 5),
@@ -474,8 +474,8 @@ def test_stats(policy, threads, queue_size, dynamic, static, server_port):
         assert sum(all for all, s, d in threads_stats.values()) == dynamic + static
         assert sum(s for all, s, d in threads_stats.values()) == static
         assert sum(d for all, s, d in threads_stats.values()) == dynamic
-"""
 
+"""
 @pytest.mark.parametrize("policy, threads, num_clients, queue_size",
                          [
                              ("block", 2, 4, 10),
@@ -505,3 +505,4 @@ def test_stats_dispatch_time(policy, threads, num_clients, queue_size, server_po
 
         for i, t in enumerate(dispatches):
             assert i // threads == t
+"""
