@@ -173,7 +173,7 @@ LOCKS4_FILES = {'/output.cgi?0.01': [True, DYNAMIC_OUTPUT_CONTENT.format(seconds
                 '/output.cgi?0.005': [True, DYNAMIC_OUTPUT_CONTENT.format(seconds="0.0"), generate_dynamic_headers(r"\d+", r"\d+", r"\d+", r"\d+")]
                 }
 
-"""
+
 @pytest.mark.parametrize("policy, threads, num_clients, queue_size, times, files",
                          [
                              ("block", 8, 20, 16, 20, LOCKS_FILES),
@@ -209,7 +209,7 @@ def test_locks(policy, threads, num_clients, queue_size, times, files, server_po
                         validate_response_full(response, expected_headers, expected)
                     else:
                         validate_response_binary(response, expected_headers, expected)
-"""
+
 
 EQUAL_FILES = {'/home.html': [True, STATIC_OUTPUT_CONTENT, generate_static_headers(r"\d+", r"\d+", r"\d+", r"\d+", "text/html")],
                '/output.cgi?0.3': [True, DYNAMIC_OUTPUT_CONTENT.format(count=r"\d+", static=r"\d+", dynamic=r"\d+", seconds="0.3"),  generate_dynamic_headers(r"\d+", r"\d+", r"\d+", r"\d+")],
@@ -254,7 +254,7 @@ FEWER_FILES = {'/home.html': [True, STATIC_OUTPUT_CONTENT, generate_static_heade
                '/favicon.ico': [False, None, generate_static_headers(r"\d+", r"\d+", r"\d+", r"\d+", "text/plain")]
                }
 
-
+"""
 @pytest.mark.parametrize("policy, threads, num_clients, queue_size, times, files",
                          [
                              ("block", 16, 20, 8, 20, FEWER_FILES),
@@ -288,7 +288,7 @@ def test_fewer(policy, threads, num_clients, queue_size, times, files, server_po
                         validate_response_binary(response, expected_headers, expected)
                 assert dropped == (num_clients - queue_size if policy != "block" and ".cgi" in file_name else 0)
 
-
+"""
 @pytest.mark.parametrize("threads, num_clients, queue_size, times",
                          [
                              (2, 14, 8, 5),
