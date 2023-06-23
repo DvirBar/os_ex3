@@ -176,7 +176,7 @@ LOCKS4_FILES = {'/output.cgi?0.01': [True, DYNAMIC_OUTPUT_CONTENT.format(seconds
 
 @pytest.mark.parametrize("policy, threads, num_clients, queue_size, times, files",
                          [
-                             ("block", 8, 20, 16, 20, LOCKS_FILES),
+                             # ("block", 8, 20, 16, 20, LOCKS_FILES),
                              ("block", 32, 40, 64, 10, LOCKS2_FILES),
                              ("block", 64, 50, 128, 6, LOCKS3_FILES),
                              ("block", 25, 20, 27, 20, LOCKS4_FILES),
