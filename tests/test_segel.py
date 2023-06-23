@@ -254,7 +254,6 @@ FEWER_FILES = {'/home.html': [True, STATIC_OUTPUT_CONTENT, generate_static_heade
                '/favicon.ico': [False, None, generate_static_headers(r"\d+", r"\d+", r"\d+", r"\d+", "text/plain")]
                }
 
-"""
 @pytest.mark.parametrize("policy, threads, num_clients, queue_size, times, files",
                          [
                              ("block", 16, 20, 8, 20, FEWER_FILES),
@@ -287,7 +286,6 @@ def test_fewer(policy, threads, num_clients, queue_size, times, files, server_po
                     else:
                         validate_response_binary(response, expected_headers, expected)
                 assert dropped == (num_clients - queue_size if policy != "block" and ".cgi" in file_name else 0)
-
 """
 @pytest.mark.parametrize("threads, num_clients, queue_size, times",
                          [
@@ -476,7 +474,7 @@ def test_stats(policy, threads, queue_size, dynamic, static, server_port):
         assert sum(all for all, s, d in threads_stats.values()) == dynamic + static
         assert sum(s for all, s, d in threads_stats.values()) == static
         assert sum(d for all, s, d in threads_stats.values()) == dynamic
-
+"""
 
 @pytest.mark.parametrize("policy, threads, num_clients, queue_size",
                          [
@@ -486,7 +484,7 @@ def test_stats(policy, threads, queue_size, dynamic, static, server_port):
                              ("random", 2, 4, 10),
                          ])
 def test_stats_dispatch_time(policy, threads, num_clients, queue_size, server_port):
-    """dispatch time should be greater than 1 secs when sending 1sec 4 dynamic requests. the server only has 2 worker threads."""
+    # dispatch time should be greater than 1 secs when sending 1sec 4 dynamic requests. the server only has 2 worker threads.
     with Server("./server", server_port, threads, queue_size, policy) as server:
         sleep(0.1)
         clients = []
