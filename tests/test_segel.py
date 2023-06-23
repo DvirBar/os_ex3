@@ -173,7 +173,7 @@ LOCKS4_FILES = {'/output.cgi?0.01': [True, DYNAMIC_OUTPUT_CONTENT.format(seconds
                 '/output.cgi?0.005': [True, DYNAMIC_OUTPUT_CONTENT.format(seconds="0.0"), generate_dynamic_headers(r"\d+", r"\d+", r"\d+", r"\d+")]
                 }
 
-
+"""
 @pytest.mark.parametrize("policy, threads, num_clients, queue_size, times, files",
                          [
                              ("block", 8, 20, 16, 20, LOCKS_FILES),
@@ -190,7 +190,7 @@ LOCKS4_FILES = {'/output.cgi?0.01': [True, DYNAMIC_OUTPUT_CONTENT.format(seconds
                              ("random", 64, 50, 128, 6, LOCKS3_FILES),
                              ("random", 25, 20, 27, 20, LOCKS4_FILES),
                          ])
-"""
+
 def test_locks(policy, threads, num_clients, queue_size, times, files, server_port):
     with Server("./server", server_port, threads, queue_size, policy) as server:
         sleep(0.1)
