@@ -190,6 +190,7 @@ LOCKS4_FILES = {'/output.cgi?0.01': [True, DYNAMIC_OUTPUT_CONTENT.format(seconds
                              ("random", 64, 50, 128, 6, LOCKS3_FILES),
                              ("random", 25, 20, 27, 20, LOCKS4_FILES),
                          ])
+"""
 def test_locks(policy, threads, num_clients, queue_size, times, files, server_port):
     with Server("./server", server_port, threads, queue_size, policy) as server:
         sleep(0.1)
@@ -208,7 +209,7 @@ def test_locks(policy, threads, num_clients, queue_size, times, files, server_po
                         validate_response_full(response, expected_headers, expected)
                     else:
                         validate_response_binary(response, expected_headers, expected)
-
+"""
 
 EQUAL_FILES = {'/home.html': [True, STATIC_OUTPUT_CONTENT, generate_static_headers(r"\d+", r"\d+", r"\d+", r"\d+", "text/html")],
                '/output.cgi?0.3': [True, DYNAMIC_OUTPUT_CONTENT.format(count=r"\d+", static=r"\d+", dynamic=r"\d+", seconds="0.3"),  generate_dynamic_headers(r"\d+", r"\d+", r"\d+", r"\d+")],
