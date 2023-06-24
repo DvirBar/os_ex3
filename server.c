@@ -25,7 +25,6 @@ pthread_cond_t mainThreadCond;
 pthread_mutex_t m;
 int listSize = 0;
 int numWorkingThreads = 0;
-int totalThreads = 0;
 
 
 void getargs(int *port, int *numThreads, int* queueSize, char** schedalg, int *maxSize, int argc, char *argv[])
@@ -85,11 +84,9 @@ void* threadHandler(void* args) {
         stats->arrivalTime = item->arrivalTime;
         connfd = item->connFd;
 
-
         timersub(&pickupTime, &stats->arrivalTime, &stats->dispatchInterval);
         tstats->reqCount++;
         requestHandle(item->connFd, stats, tstats);
-//        printf("connfd: %d\n", connfd);
         Close(connfd);
 
         pthread_mutex_lock(&m);
@@ -114,7 +111,6 @@ void handleBlock(List list, struct timeval arrivalTime, int connfd, int queueSiz
 }
 
 void handleDropTail(int connfd) {
-//    printf("dropping %d\n", connfd);
     Close(connfd);
 }
 
@@ -144,8 +140,6 @@ void handleDynamic(int* queueSize, int connfd, int maxSize) {
         (*queueSize)++;
     }
 
-//    printf("dropping %d. queue size is now: %d\n", connfd, *queueSize);
-    // TODO: replace close socket by calling to drop tail
     Close(connfd);
 }
 
@@ -190,7 +184,7 @@ void handleRandom(List list, struct timeval arrivalTime, int connfd) {
     removeIndexes(list, indexes_to_remove, num_of_indexes, &listSize, removed_requests);
 
     for(int i = 0; i < num_of_indexes; i++) {
-//        printf("closing %d\n", removed_requests[i]);
+
         Close(removed_requests[i]);
     }
 
@@ -200,7 +194,6 @@ void handleRandom(List list, struct timeval arrivalTime, int connfd) {
 }
 
 void handleSchedAlg(List list, char* schedalg, int connfd, int* queueSize, int maxSize, struct timeval arrivalTime) {
-    // TODO: Should we put the lock inside for performance?
     if(strcmp(schedalg, "block") == 0) {
         handleBlock(list, arrivalTime, connfd, *queueSize);
         return;
@@ -251,22 +244,17 @@ int main(int argc, char *argv[])
         ThreadHandlerArgs args = malloc(sizeof(struct ThreadHandlerArgs_t));
         args->list = waitingList;
         args->threadNum = i;
-//        pthread_t thread;
         pthread_create(&workingThreads[i], NULL, threadHandler, args);
     }
 
     listenfd = Open_listenfd(port);
-
-//    uint64_t tid;
-//    pthread_threadid_np(NULL, &tid);
+;
 
     while (1) {
         clientlen = sizeof(clientaddr);
         struct timeval arrivalTime;
         connfd = Accept(listenfd, (SA *)&clientaddr, (socklen_t *) &clientlen);
-        // TODO: should we check for gettimeofday failure?
         gettimeofday(&arrivalTime, NULL);
-//        printf("received %d\n", connfd);
         pthread_mutex_lock(&m);
 
         if(listSize+numWorkingThreads == queueSize) {
