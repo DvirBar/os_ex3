@@ -46,7 +46,6 @@ void getargs(int *port, int *numThreads, int* queueSize, char** schedalg, int *m
        strcmp(*schedalg, "bf") != 0 &&
        strcmp(*schedalg, "dynamic") != 0 &&
        strcmp(*schedalg, "random") != 0) {
-//        fprintf(stderr, "Invalid schedalg! Aborting...\n");
         exit(1);
     }
 
@@ -65,19 +64,14 @@ void* threadHandler(void* args) {
 
     tstats->tid = hargs->threadNum;
 
-//    totalThreads++;
 
     tstats->reqCount = 0;
     tstats->staticReqCount = 0;
     tstats->dynamicReqCount = 0;
-//    pthread_threadid_np(NULL, &tid);
-
-//    printf("%d\n", hargs->threadNum);
 
     while(1) {
         pthread_mutex_lock(&m);
         while(listSize == 0) {
-//            printf("%llu, number: %d, waiting...\n", tid, tstats->tid);
             pthread_cond_wait(&workerThreadCond, &m);
         }
 
@@ -91,8 +85,8 @@ void* threadHandler(void* args) {
         stats->arrivalTime = item->arrivalTime;
         connfd = item->connFd;
 
-        timersub(&pickupTime, &stats->arrivalTime, &stats->dispatchInterval);
 
+        timersub(&pickupTime, &stats->arrivalTime, &stats->dispatchInterval);
         tstats->reqCount++;
         requestHandle(item->connFd, stats, tstats);
 //        printf("connfd: %d\n", connfd);
