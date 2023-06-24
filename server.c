@@ -114,7 +114,12 @@ void handleDropTail(int connfd) {
     Close(connfd);
 }
 
-void handleDropHead(List list, struct timeval arrivalTime, int connfd) {
+void handleDropHead(List list, struct timeval arrivalTime, int connfd, int queueSize) {
+    if(queueSize == numWorkingThreads) {
+        Close(connfd);
+        return;
+    }
+
     if(listSize == 0) {
         addRequest(list, arrivalTime, connfd);
         return;
@@ -205,7 +210,7 @@ void handleSchedAlg(List list, char* schedalg, int connfd, int* queueSize, int m
     }
 
     if(strcmp(schedalg, "dh") == 0) {
-        handleDropHead(list, arrivalTime, connfd);
+        handleDropHead(list, arrivalTime, connfd, *queueSize);
         return;
     }
 
@@ -248,7 +253,6 @@ int main(int argc, char *argv[])
     }
 
     listenfd = Open_listenfd(port);
-;
 
     while (1) {
         clientlen = sizeof(clientaddr);
